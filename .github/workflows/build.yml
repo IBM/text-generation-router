@@ -28,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BUILDKIT_INLINE_CACHE: 1
+    permissions:
+      packages: write
+      contents: read
 
     steps:
     - name: "Checkout"
