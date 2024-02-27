@@ -1,0 +1,36 @@
+[package]
+name = "fmaas-router"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nick Hill"]
+description = "FMaaS gRPC Router"
+build="build.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "fmaas-router"
+path = "src/main.rs"
+
+[dependencies]
+axum = "0.6.20"
+anyhow = "^1.0.80"
+clap = { version = "^4.5.1", features = ["derive", "env"] }
+futures = "^0.3.30"
+ginepro = "=0.7.0"
+lazy_static = "^1.4.0"
+tokio = { version = "^1.36.0", features = ["rt", "rt-multi-thread", "parking_lot", "signal", "sync", "fs"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
+prost = "^0.12.3"
+serde_yaml = "^0.9.32"
+tonic = { version = "=0.10.2", features = ["tls"] }
+
+rustls-webpki = "^0.102.2" # Override to address WS-2023-0305, CVE-2018-16875
+
+[build-dependencies]
+tonic-build = "=0.10.2"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

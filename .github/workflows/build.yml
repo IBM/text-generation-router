@@ -1,0 +1,44 @@
+name: "Build"
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**.md"
+      - "proto/**"
+  pull_request:
+    branches:
+      - "main"
+    paths-ignore:
+      - "**.md"
+      - "proto/**"
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CI: true
+  DOCKER_BUILDKIT: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUILDKIT_INLINE_CACHE: 1
+
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v4
+
+    - name: "Set up Docker Buildx"
+      uses: docker/setup-buildx-action@v3
+
+    - name: "Docker build"
+      run: make build-router
+
+    - name: "Docker push"
+      if: github.ref == 'refs/heads/main'
+      run: make push-router-image

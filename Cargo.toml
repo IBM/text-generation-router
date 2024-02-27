@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = [
+    "fmaas-router"
+]
+
+[profile.release]
+debug = 1
+incremental = true
+#lto = "off"
+lto = "fat"
+panic = "abort"
