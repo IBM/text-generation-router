@@ -31,7 +31,7 @@ jobs:
       BUILDKIT_INLINE_CACHE: 1
       CACHE_IMAGE: "ghcr.io/ibm/text-gen-server:build-cache"
       CACHE_REGISTRY: "ghcr.io"
-      SERVER_IMAGE: "ghcr.io/ibm/text-gen-server:latest,quay.io/rhods-wisdom/text-generation-router:latest,quay.io/rhods-wisdom/text-generation-router:${{ env.GITHUB_REF_NAME }}"
+      SERVER_IMAGE: "ghcr.io/ibm/text-gen-server:latest,quay.io/rhods-wisdom/text-generation-router:latest,quay.io/rhods-wisdom/text-generation-router:${GITHUB_REF_NAME}"
 
     permissions:
       packages: write
