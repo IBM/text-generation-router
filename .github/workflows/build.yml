@@ -19,18 +19,13 @@ defaults:
   run:
     shell: bash
 
-env:
-  CI: true
-  DOCKER_BUILDKIT: 1
-
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      BUILDKIT_INLINE_CACHE: 1
       CACHE_IMAGE: "ghcr.io/ibm/text-gen-router:build-cache"
       CACHE_REGISTRY: "ghcr.io"
-      QUAY_ORG: "quay.io/wxpe/text-gen-router"
+      QUAY_REPOSITORY: "quay.io/wxpe/text-gen-router"
 
     permissions:
       packages: write
@@ -79,7 +74,7 @@ jobs:
         echo "CACHE_TO=$CACHE_TO" >> $GITHUB_ENV
 
     - name: "push tags"
-      run: echo "PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_ORG})" >> $GITHUB_ENV
+      run: echo "PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_REPOSITORY})" >> $GITHUB_ENV
 
     - name: "Build and push"
       uses: docker/build-push-action@v5
