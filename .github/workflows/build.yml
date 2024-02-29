@@ -79,12 +79,15 @@ jobs:
         fi
         echo "CACHE_TO=$CACHE_TO" >> $GITHUB_ENV
 
+    - name: "short sha"
+      run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
     - name: "Build and push"
       uses: docker/build-push-action@v5
       with:
         context: .
         target: router-release
-        tags: ${{ env.QUAY_ORG }}:latest,${{ env.QUAY_ORG }}:${{ github.ref_name }},${{ env.QUAY_ORG }}:${GITHUB_SHA::7}
+        tags: ${{ env.QUAY_ORG }}:latest,${{ env.QUAY_ORG }}:${{ github.ref_name }},${{ env.QUAY_ORG }}:${{ env.SHORT_SHA }}
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
