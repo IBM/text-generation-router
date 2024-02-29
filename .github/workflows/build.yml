@@ -91,10 +91,3 @@ jobs:
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
-
-#    - name: "Docker build"
-#      run: make build-router
-#
-#    - name: "Docker push"
-#      if: github.ref == 'refs/heads/main'
-#      run: make push-router-image
