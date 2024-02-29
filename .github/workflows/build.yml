@@ -73,8 +73,10 @@ jobs:
         fi
         echo "CACHE_TO=$CACHE_TO" >> $GITHUB_ENV
 
-    - name: "push tags"
-      run: echo "PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_REPOSITORY})" >> $GITHUB_ENV
+    - name: "Generate image tags"
+      run: |
+        PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_REPOSITORY})
+        echo "${PUSH_TAGS// /,}" >> $GITHUB_ENV
 
     - name: "Build and push"
       uses: docker/build-push-action@v5
