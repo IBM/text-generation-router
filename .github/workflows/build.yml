@@ -81,8 +81,6 @@ jobs:
     - name: "push tags"
       run: echo "PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_ORG})" >> $GITHUB_ENV
 
-    - name: ""
-
     - name: "Build and push"
       uses: docker/build-push-action@v5
       with:
