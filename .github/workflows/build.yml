@@ -73,15 +73,25 @@ jobs:
         fi
         echo "CACHE_TO=$CACHE_TO" >> $GITHUB_ENV
 
-    - name: "push tags"
-      run: echo "PUSH_TAGS=$(scripts/get_image_tags.sh ${QUAY_REPOSITORY} | tr -s '[:blank:]' ',')" >> $GITHUB_ENV
+    - name: "Generate tags"
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ env.QUAY_REPOSITORY }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,enable=true,priority=100,prefix=,suffix=,format=short
+          type=sha,enable=true,priority=100,prefix=${{ github.ref_name }}.,suffix=,format=short
 
     - name: "Build and push"
       uses: docker/build-push-action@v5
       with:
         context: .
         target: router-release
-        tags: ${{ env.PUSH_TAGS }}
+        tags: ${{ steps.meta.outputs.tags }}
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
