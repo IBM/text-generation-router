@@ -28,12 +28,3 @@ build-router: ##
 	--build-arg BUILDKIT_INLINE_CACHE=1 \
 	--tag "$(server_image_name)" .
 	docker images
-
-.PHONY: push-router-image
-push-router-image: ##
-	@for tag in $$(./scripts/get_image_tags.sh); do \
-		image_to_push="$(server_image_repo):$${tag}"; \
-		docker tag "$(server_image_name)" "$${image_to_push}"; \
-		echo "Pushing image $${image_to_push}"; \
-		docker push --quiet "$${image_to_push}"; \
-	done
