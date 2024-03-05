@@ -1,5 +1,5 @@
-extern crate lazy_static;
 extern crate core;
+extern crate lazy_static;
 
-pub mod server;
 mod pb;
+pub mod server;

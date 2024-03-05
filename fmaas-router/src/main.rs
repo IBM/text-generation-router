@@ -1,7 +1,8 @@
-use clap::Parser;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use tracing_subscriber::{EnvFilter};
+
+use clap::Parser;
 use fmaas_router::server;
+use tracing_subscriber::EnvFilter;
 
 /// App Configuration
 #[derive(Parser, Debug)]
@@ -26,7 +27,6 @@ struct Args {
     #[clap(long, env)]
     upstream_tls_ca_cert_path: Option<String>,
 }
-
 
 fn main() -> Result<(), std::io::Error> {
     //Get args
@@ -66,22 +66,20 @@ fn main() -> Result<(), std::io::Error> {
         .block_on(async {
             //TODO initialize clients
 
-            let grpc_addr = SocketAddr::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.grpc_port
-            );
-            let http_addr = SocketAddr::new(
-                IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.probe_port
-            );
+            let grpc_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.grpc_port);
+            let http_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.probe_port);
 
             server::run(
                 grpc_addr,
                 http_addr,
-                args.tls_cert_path.map(|cp| (cp, args.tls_key_path.unwrap())),
+                args.tls_cert_path
+                    .map(|cp| (cp, args.tls_key_path.unwrap())),
                 args.tls_client_ca_cert_path,
                 args.default_upstream_port,
                 args.upstream_tls,
-                args.upstream_tls_ca_cert_path
-            ).await;
+                args.upstream_tls_ca_cert_path,
+            )
+            .await;
 
             Ok(())
         })
