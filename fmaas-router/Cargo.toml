@@ -20,12 +20,13 @@ clap = { version = "^4.5.3", features = ["derive", "env"] }
 futures = "^0.3.30"
 tonic = { version = "=0.11.0", features = ["tls"] }
 ginepro = "=0.7.1"
-lazy_static = "^1.4.0"
 tokio = { version = "^1.36.0", features = ["rt", "rt-multi-thread", "parking_lot", "signal", "sync", "fs"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
 prost = "^0.12.3"
+prost-types = "^0.12.3"
 serde_yaml = "^0.9.33"
+serde = { version = "^1.0.197", features = ["derive"] }
 
 mio = "^0.8.11" # Override to address CVE-2024-27308
 rustls-webpki = "^0.102.2" # Override to address WS-2023-0305, CVE-2018-16875

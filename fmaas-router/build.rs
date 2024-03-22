@@ -7,7 +7,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_server(true)
         .out_dir("src/pb")
         .include_file("mod.rs")
-        .compile(&["../proto/generation.proto"], &["../proto"])
+        .compile(
+            &["../proto/generation.proto", "../proto/nlpservice.proto"],
+            &["../proto"],
+        )
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 
     Ok(())

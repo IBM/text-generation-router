@@ -1,0 +1,7 @@
+generation:
+  bigscience/bloom: bloom-inference-server
+  bigscience/bloomz: bloomz-inference-server
+
+embeddings:
+  sentence-transformers/all-MiniLM-L6-v: "caikit-embeddings-service.embeddings-dev:8085"
+  ibm/slate.rtvr271M: "caikit-embeddings-service.embeddings-dev:8085"

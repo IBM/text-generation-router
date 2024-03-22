@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use clap::Parser;
-use fmaas_router::server;
+use fmaas_router::{server, ModelMap};
 use tracing_subscriber::EnvFilter;
 
 /// App Configuration
@@ -16,6 +16,8 @@ struct Args {
     default_upstream_port: u16,
     #[clap(long, env)]
     json_output: bool,
+    #[clap(long, env)]
+    model_map_config: String,
     #[clap(long, env)]
     tls_cert_path: Option<String>,
     #[clap(long, env)]
@@ -53,10 +55,12 @@ fn main() -> Result<(), std::io::Error> {
     if args.tls_key_path.is_some() != args.tls_cert_path.is_some() {
         panic!("tls: must provide both cert and key")
     }
-
     if args.tls_client_ca_cert_path.is_some() && args.tls_cert_path.is_none() {
         panic!("tls: cannot provide client ca cert without keypair")
     }
+
+    // Load model map config
+    let model_map = ModelMap::load(args.model_map_config);
 
     // Launch Tokio runtime
     tokio::runtime::Builder::new_multi_thread()
@@ -64,8 +68,6 @@ fn main() -> Result<(), std::io::Error> {
         .build()
         .unwrap()
         .block_on(async {
-            //TODO initialize clients
-
             let grpc_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.grpc_port);
             let http_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.probe_port);
 
@@ -78,6 +80,7 @@ fn main() -> Result<(), std::io::Error> {
                 args.default_upstream_port,
                 args.upstream_tls,
                 args.upstream_tls_ca_cert_path,
+                model_map,
             )
             .await;
 
