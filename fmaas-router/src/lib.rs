@@ -11,6 +11,7 @@ use tracing::info;
 mod pb;
 pub mod rpc;
 pub mod server;
+pub mod tracing_utils;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ServiceAddr {

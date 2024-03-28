@@ -9,7 +9,7 @@ use crate::{pb::fmaas::{
     generation_service_server::GenerationService, BatchedGenerationRequest,
     BatchedGenerationResponse, BatchedTokenizeRequest, BatchedTokenizeResponse,
     GenerationResponse, ModelInfoRequest, ModelInfoResponse, SingleGenerationRequest,
-}, create_clients, ServiceAddr};
+}, create_clients, ServiceAddr, tracing_utils::{ExtractTelemetryContext, InjectTelemetryContext}};
 
 #[derive(Debug, Default)]
 pub struct GenerationServicer {
@@ -42,7 +42,6 @@ impl GenerationServicer {
 
 #[tonic::async_trait]
 impl GenerationService for GenerationServicer {
-    #[instrument(skip_all)]
     async fn generate(
         &self,
         request: Request<BatchedGenerationRequest>,
@@ -54,12 +53,23 @@ impl GenerationService for GenerationServicer {
             }));
         }
         debug!("Routing generation request for Model ID {}", &br.model_id);
-        self.client(&br.model_id).await?.generate(request).await
+        let mut client = self.client(&br.model_id).await?;
+        let mut span = tracing::info_span!(
+            "fmaas.GenerationService/Generate",
+            rpc.system = "grpc",
+            rpc.method = "Generate",
+            rpc.service = "GenerationService",
+            model_id = br.model_id
+        );
+        // Extract span info from the request metadata and set to current span
+        let request = request
+            .extract_context_span(&mut span)
+            .inject_context_span(&span); // Inject span info into request metadata
+        client.generate(request).await
     }
 
     type GenerateStreamStream = Streaming<GenerationResponse>;
 
-    #[instrument(skip_all)]
     async fn generate_stream(
         &self,
         request: Request<SingleGenerationRequest>,
@@ -72,10 +82,18 @@ impl GenerationService for GenerationServicer {
             "Routing streaming generation request for Model ID {}",
             &sr.model_id
         );
-        self.client(&sr.model_id)
-            .await?
-            .generate_stream(request)
-            .await
+        let mut client = self.client(&sr.model_id).await?;
+        let mut span = tracing::info_span!(
+            "fmaas.GenerationService/GenerateStream",
+            rpc.system = "grpc",
+            rpc.method = "GenerateStream",
+            rpc.service = "GenerationService",
+            model_id = sr.model_id
+        );
+        let request = request
+            .extract_context_span(&mut span)
+            .inject_context_span(&span);
+        client.generate_stream(request).await
     }
 
     #[instrument(skip_all)]

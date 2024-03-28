@@ -1,8 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use clap::Parser;
-use fmaas_router::{server, ModelMap};
-use tracing_subscriber::EnvFilter;
+use fmaas_router::{server, tracing_utils::init_logging, ModelMap};
 
 /// App Configuration
 #[derive(Parser, Debug)]
@@ -28,29 +27,15 @@ struct Args {
     upstream_tls: bool,
     #[clap(long, env)]
     upstream_tls_ca_cert_path: Option<String>,
+    #[clap(long, env = "OTEL_EXPORTER_OTLP_ENDPOINT")]
+    otlp_endpoint: Option<String>,
+    #[clap(long, env = "OTEL_SERVICE_NAME", default_value = "fmaas-router")]
+    otlp_service_name: String,
 }
 
 fn main() -> Result<(), std::io::Error> {
     //Get args
     let args = Args::parse();
-
-    // Configure log level; use info by default
-    let filter_layer = EnvFilter::try_from_default_env()
-        .or_else(|_| EnvFilter::try_new("info"))
-        .unwrap();
-
-    if args.json_output {
-        tracing_subscriber::fmt()
-            .json()
-            .with_env_filter(filter_layer)
-            .with_current_span(false)
-            .init();
-    } else {
-        tracing_subscriber::fmt()
-            .compact()
-            .with_env_filter(filter_layer)
-            .init();
-    }
 
     if args.tls_key_path.is_some() != args.tls_cert_path.is_some() {
         panic!("tls: must provide both cert and key")
@@ -70,6 +55,8 @@ fn main() -> Result<(), std::io::Error> {
         .block_on(async {
             let grpc_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.grpc_port);
             let http_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.probe_port);
+
+            init_logging(args.otlp_service_name, args.json_output, args.otlp_endpoint);
 
             server::run(
                 grpc_addr,
