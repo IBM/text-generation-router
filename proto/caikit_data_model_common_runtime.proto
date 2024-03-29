@@ -5,6 +5,7 @@
 
 syntax = "proto3";
 package caikit_data_model.common.runtime;
+import "caikit_data_model_common.proto";
 
 
 /*-- MESSAGES ----------------------------------------------------------------*/
@@ -21,4 +22,28 @@ message ModelInfo {
   bool loaded = 7;
   string module_id = 5;
   map<string, string> module_metadata = 6;
+}
+
+message ModelInfoRequest {
+
+  /*-- fields --*/
+  repeated string model_ids = 1;
+}
+
+message ModelInfoResponse {
+
+  /*-- fields --*/
+  repeated caikit_data_model.common.runtime.ModelInfo models = 1;
+}
+
+message RuntimeInfoRequest {
+}
+
+message RuntimeInfoResponse {
+
+  /*-- nested messages --*/
+
+  /*-- fields --*/
+  string runtime_version = 1;
+  map<string, string> python_packages = 2;
 }

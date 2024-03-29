@@ -5,11 +5,30 @@
 
 syntax = "proto3";
 package caikit_data_model.runtime;
-import "caikit_data_model.common.trainingstatus.proto";
 import "google/protobuf/timestamp.proto";
+import "caikit_data_model_common.proto";
 
 
 /*-- MESSAGES ----------------------------------------------------------------*/
+
+message ModelPointer {
+
+  /*-- fields --*/
+  string model_id = 1;
+}
+
+message TrainingInfoRequest {
+
+  /*-- fields --*/
+  string training_id = 1;
+}
+
+message TrainingJob {
+
+  /*-- fields --*/
+  string training_id = 1;
+  string model_name = 2;
+}
 
 message TrainingStatusResponse {
 

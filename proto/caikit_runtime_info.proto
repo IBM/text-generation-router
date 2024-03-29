@@ -1,0 +1,17 @@
+
+/*------------------------------------------------------------------------------
+ * AUTO GENERATED
+ *----------------------------------------------------------------------------*/
+
+syntax = "proto3";
+package caikit.runtime.info;
+import "caikit_data_model_common.proto";
+import "caikit_data_model_common_runtime.proto";
+
+
+/*-- SERVICES ----------------------------------------------------------------*/
+
+service InfoService {
+  rpc GetRuntimeInfo(caikit_data_model.common.runtime.RuntimeInfoRequest) returns (caikit_data_model.common.runtime.RuntimeInfoResponse);
+  rpc GetModelsInfo(caikit_data_model.common.runtime.ModelInfoRequest) returns (caikit_data_model.common.runtime.ModelInfoResponse);
+}
