@@ -1,7 +1,11 @@
 generation:
-  bigscience/bloom: bloom-inference-server
-  bigscience/bloomz: bloomz-inference-server
+  mistralai/mistral-7b-instruct-v0-2: mistral-7b-instruct-v0-2-inference-server
 
 embeddings:
-  sentence-transformers/all-MiniLM-L6-v: "caikit-embeddings-service.embeddings-dev:8085"
-  ibm/slate.rtvr271M: "caikit-embeddings-service.embeddings-dev:8085"
+  sentence-transformers/all-MiniLM-L6-v: caikit-embeddings-service.embeddings-dev:8085
+
+chat_templates:
+  mistralai/mistral-7b-instruct-v0-2:
+    bos_token: "<s>"
+    eos_token: "</s>"
+    source: "{{ bos_token }}{% for message in messages %}{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}{% endif %}{% if message['role'] == 'user' %}{{ '[INST] ' + message['content'] + ' [/INST]' }}{% elif message['role'] == 'assistant' %}{{ message['content'] + eos_token}}{% else %}{{ raise_exception('Only user and assistant roles are supported!') }}{% endif %}{% endfor %}"

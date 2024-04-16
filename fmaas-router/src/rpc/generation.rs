@@ -1,30 +1,28 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use ginepro::LoadBalancedChannel;
-use tonic::{transport::ClientTlsConfig, Request, Response, Status, Streaming};
+use tonic::{Request, Response, Status, Streaming};
 use tracing::{debug, instrument};
 
-use crate::{pb::fmaas::{
-    generation_service_client::GenerationServiceClient,
-    generation_service_server::GenerationService, BatchedGenerationRequest,
-    BatchedGenerationResponse, BatchedTokenizeRequest, BatchedTokenizeResponse,
-    GenerationResponse, ModelInfoRequest, ModelInfoResponse, SingleGenerationRequest,
-}, create_clients, ServiceAddr, tracing_utils::{ExtractTelemetryContext, InjectTelemetryContext}};
+use crate::{
+    pb::fmaas::{
+        generation_service_client::GenerationServiceClient,
+        generation_service_server::GenerationService, BatchedGenerationRequest,
+        BatchedGenerationResponse, BatchedTokenizeRequest, BatchedTokenizeResponse,
+        GenerationResponse, ModelInfoRequest, ModelInfoResponse, SingleGenerationRequest,
+    },
+    tracing_utils::{ExtractTelemetryContext, InjectTelemetryContext},
+};
 
 #[derive(Debug, Default)]
 pub struct GenerationServicer {
-    clients: HashMap<String, GenerationServiceClient<LoadBalancedChannel>>,
+    clients: Arc<HashMap<String, GenerationServiceClient<LoadBalancedChannel>>>,
 }
 
 impl GenerationServicer {
-    pub async fn new(
-        default_target_port: u16,
-        client_tls: Option<&ClientTlsConfig>,
-        model_map: &HashMap<String, ServiceAddr>,
+    pub fn new(
+        clients: Arc<HashMap<String, GenerationServiceClient<LoadBalancedChannel>>>,
     ) -> Self {
-        let clients = create_clients(
-            default_target_port, client_tls, model_map, GenerationServiceClient::new
-        ).await;
         Self { clients }
     }
 

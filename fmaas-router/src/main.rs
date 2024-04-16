@@ -1,4 +1,7 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::{
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    sync::Arc,
+};
 
 use clap::Parser;
 use fmaas_router::{server, tracing_utils::init_logging, ModelMap};
@@ -10,7 +13,7 @@ struct Args {
     #[clap(default_value = "8033", long, short, env)]
     grpc_port: u16,
     #[clap(default_value = "3000", long, short, env)]
-    probe_port: u16,
+    port: u16,
     #[clap(default_value = "8033", long, short, env)]
     default_upstream_port: u16,
     #[clap(long, env)]
@@ -45,7 +48,7 @@ fn main() -> Result<(), std::io::Error> {
     }
 
     // Load model map config
-    let model_map = ModelMap::load(args.model_map_config);
+    let model_map = Arc::new(ModelMap::load(args.model_map_config));
 
     // Launch Tokio runtime
     tokio::runtime::Builder::new_multi_thread()
@@ -54,7 +57,7 @@ fn main() -> Result<(), std::io::Error> {
         .unwrap()
         .block_on(async {
             let grpc_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.grpc_port);
-            let http_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.probe_port);
+            let http_addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), args.port);
 
             init_logging(args.otlp_service_name, args.json_output, args.otlp_endpoint);
 

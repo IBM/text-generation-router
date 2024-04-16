@@ -1,16 +1,25 @@
-use std::{net::SocketAddr, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 
-use axum::{routing::get, Router};
-use tokio::{fs::read, signal, time::sleep};
+use axum::{
+    routing::{get, post},
+    Router,
+};
+use ginepro::LoadBalancedChannel;
+use tokio::{fs::read, net::TcpListener, signal, time::sleep};
 use tonic::transport::{
     server::RoutesBuilder, Certificate, ClientTlsConfig, Identity, Server, ServerTlsConfig,
 };
 use tracing::info;
 
 use crate::{
+    create_clients,
+    openai::{chat_completions, completions},
     pb::{
         caikit::runtime::nlp::nlp_service_server::NlpServiceServer,
-        fmaas::generation_service_server::GenerationServiceServer,
+        fmaas::{
+            generation_service_client::GenerationServiceClient,
+            generation_service_server::GenerationServiceServer,
+        },
     },
     rpc::{generation::GenerationServicer, nlp::NlpServicer},
     ModelMap,
@@ -25,7 +34,7 @@ pub async fn run(
     default_target_port: u16,
     upstream_tls: bool,
     upstream_tls_ca_cert: Option<String>,
-    model_map: ModelMap,
+    model_map: Arc<ModelMap>,
 ) {
     let mut builder = Server::builder();
 
@@ -59,12 +68,24 @@ pub async fn run(
         panic!("Upstream TLS enabled without any certificates");
     }
 
+    let clients = if model_map.generation().is_some() {
+        create_clients(
+            default_target_port,
+            client_tls.as_ref(),
+            model_map.generation().unwrap(),
+            GenerationServiceClient::new,
+        )
+        .await
+    } else {
+        HashMap::default()
+    };
+    let clients = Arc::new(clients);
+
     // Build and start gRPC server in background task
     let mut routes_builder = RoutesBuilder::default();
-    if let Some(model_map) = model_map.generation() {
+    if model_map.generation().is_some() {
         info!("Enabling GenerationService");
-        let generation_servicer =
-            GenerationServicer::new(default_target_port, client_tls.as_ref(), model_map).await;
+        let generation_servicer = GenerationServicer::new(clients.clone());
         routes_builder.add_service(GenerationServiceServer::new(generation_servicer));
     }
     if let Some(model_map) = model_map.embeddings() {
@@ -93,12 +114,23 @@ pub async fn run(
     }
 
     // Build and await on the HTTP server
-    let app = Router::new().route("/health", get(health));
-
-    let server = axum::Server::bind(&http_addr)
-        .serve(app.into_make_service())
-        .with_graceful_shutdown(shutdown_signal());
-
+    let listener = TcpListener::bind(&http_addr)
+        .await
+        .unwrap_or_else(|_| panic!("HTTP server startup failed: unable to listen on {http_addr}"));
+    let server = if model_map.generation().is_some() {
+        info!("Enabling OpenAI-compatible Chat and Completions service");
+        let state = AppState::new(model_map, clients);
+        let app = Router::new()
+            .route("/health", get(health))
+            .route("/v1/chat/completions", post(chat_completions))
+            .route("/v1/completions", post(completions))
+            //.layer(TraceLayer::new_for_http())
+            .with_state(state);
+        axum::serve(listener, app.into_make_service()).with_graceful_shutdown(shutdown_signal())
+    } else {
+        let app = Router::new().route("/health", get(health));
+        axum::serve(listener, app.into_make_service()).with_graceful_shutdown(shutdown_signal())
+    };
     info!("HTTP server started on port {}", http_addr.port());
     server.await.expect("HTTP server crashed!");
 
@@ -144,4 +176,27 @@ async fn shutdown_signal() {
     }
 
     info!("signal received, starting graceful shutdown");
+}
+
+#[derive(Clone)]
+pub struct AppState {
+    model_map: Arc<ModelMap>,
+    clients: Arc<HashMap<String, GenerationServiceClient<LoadBalancedChannel>>>,
+}
+
+impl AppState {
+    pub fn new(
+        model_map: Arc<ModelMap>,
+        clients: Arc<HashMap<String, GenerationServiceClient<LoadBalancedChannel>>>,
+    ) -> Self {
+        Self { model_map, clients }
+    }
+
+    pub fn model_map(&self) -> &Arc<ModelMap> {
+        &self.model_map
+    }
+
+    pub fn clients(&self) -> &Arc<HashMap<String, GenerationServiceClient<LoadBalancedChannel>>> {
+        &self.clients
+    }
 }

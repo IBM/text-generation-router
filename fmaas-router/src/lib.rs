@@ -1,12 +1,15 @@
 use std::{collections::HashMap, path::Path};
+
 use anyhow::Context;
 use futures::future::try_join_all;
 use ginepro::LoadBalancedChannel;
-
+use minijinja::{context, Environment, Template};
 use serde::{Deserialize, Deserializer};
 use tonic::transport::ClientTlsConfig;
 use tracing::info;
 
+pub mod openai;
+use openai::Message;
 #[allow(clippy::enum_variant_names)]
 mod pb;
 pub mod rpc;
@@ -30,6 +33,8 @@ pub struct ModelMapV2 {
     generation: HashMap<String, ServiceAddr>,
     #[serde(deserialize_with = "de_service_addr", default = "HashMap::default")]
     embeddings: HashMap<String, ServiceAddr>,
+    #[serde(default = "HashMap::default")]
+    chat_templates: HashMap<String, ChatTemplate>,
 }
 
 /// Maps model names to service address.
@@ -58,6 +63,61 @@ impl ModelMap {
             ModelMap::V1(_) => None,
             ModelMap::V2(v2) => (!v2.embeddings.is_empty()).then_some(&v2.embeddings),
         }
+    }
+
+    pub fn chat_templates(&self) -> &HashMap<String, ChatTemplate> {
+        match self {
+            ModelMap::V1(_) => unimplemented!(),
+            ModelMap::V2(v2) => &v2.chat_templates,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RawChatTemplate {
+    pub bos_token: String,
+    pub eos_token: String,
+    pub source: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(try_from = "RawChatTemplate")]
+pub struct ChatTemplate {
+    bos_token: String,
+    eos_token: String,
+    template: Template<'static, 'static>,
+}
+
+impl TryFrom<RawChatTemplate> for ChatTemplate {
+    type Error = minijinja::Error;
+
+    fn try_from(value: RawChatTemplate) -> Result<Self, Self::Error> {
+        let source = value
+            .source
+            .lines()
+            .map(|l| l.trim())
+            .collect::<Vec<_>>()
+            .join("")
+            .into_boxed_str();
+        let env = Box::leak(Box::new(Environment::new()));
+        let template = env.template_from_str(Box::leak(source))?;
+        Ok(ChatTemplate {
+            bos_token: value.bos_token,
+            eos_token: value.eos_token,
+            template,
+        })
+    }
+}
+
+impl ChatTemplate {
+    pub fn render(&self, messages: &[Message]) -> String {
+        let ctx = context! {
+            bos_token => self.bos_token,
+            eos_token => self.eos_token,
+            add_generation_prompt => true,
+            messages => messages,
+        };
+        self.template.render(ctx).unwrap()
     }
 }
 
@@ -119,4 +179,53 @@ async fn create_clients<C>(
         .expect("Error creating upstream service clients")
         .into_iter()
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_render_chat_template() {
+        let s = r#"
+        generation:
+            mistralai/mistral-7b-instruct-v0-2: mistral-7b-instruct-v0-2-inference-server
+        chat_templates:
+            mistralai/mistral-7b-instruct-v0-2:
+                bos_token: "<s>"
+                eos_token: "</s>"
+                source: >-
+                    {{ bos_token }}{% for message in messages %}
+                        {% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+                            {{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}
+                        {% endif %}
+                        {% if message['role'] == 'user' %}
+                            {{ '[INST] ' + message['content'] + ' [/INST]' }}
+                        {% elif message['role'] == 'assistant' %}
+                            {{ message['content'] + eos_token}}
+                        {% else %}
+                            {{ raise_exception('Only user and assistant roles are supported!') }}
+                        {% endif %}
+                    {% endfor %}
+        "#;
+        let model_map: ModelMap = serde_yaml::from_str(s).unwrap();
+        let messages = vec![
+            Message::new("user", "Hey, how are you?", None),
+            Message::new("assistant", "Good. How can I help you?", None),
+            Message::new(
+                "user",
+                "I'm just testing to make sure templating works.",
+                None,
+            ),
+        ];
+        let chat_template = model_map
+            .chat_templates()
+            .get("mistralai/mistral-7b-instruct-v0-2")
+            .unwrap();
+        let prompt = chat_template.render(&messages);
+        assert_eq!(
+            prompt, 
+            "<s>[INST] Hey, how are you? [/INST]Good. How can I help you?</s>[INST] I'm just testing to make sure templating works. [/INST]"
+        )
+    }
 }
