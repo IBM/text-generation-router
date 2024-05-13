@@ -1,5 +1,5 @@
 ## Global Args #################################################################
-ARG BASE_UBI_MINIMAL_IMAGE_TAG=9.3-1612
+ARG BASE_UBI_MINIMAL_IMAGE_TAG=9.4-947.1714667021
 ARG PROTOC_VERSION=26.0
 
 
