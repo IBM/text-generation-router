@@ -1,11 +1,11 @@
 ## Global Args #################################################################
-ARG BASE_UBI_MINIMAL_IMAGE_TAG=9.4-949.1714662671
-ARG PROTOC_VERSION=26.0
+ARG BASE_UBI_MINIMAL_IMAGE_TAG=9.4-1134
+ARG PROTOC_VERSION=27.1
 
 
 ## Rust builder ################################################################
 # Specific debian version so that compatible glibc version is used
-FROM rust:1.77-bullseye as rust-builder
+FROM rust:1.79-bullseye as rust-builder
 ARG PROTOC_VERSION
 
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
