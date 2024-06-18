@@ -15,18 +15,18 @@ path = "src/main.rs"
 
 [dependencies]
 axum = "0.6.20"
-anyhow = "^1.0.81"
-clap = { version = "^4.5.3", features = ["derive", "env"] }
+anyhow = "^1.0.86"
+clap = { version = "^4.5.7", features = ["derive", "env"] }
 futures = "^0.3.30"
 tonic = { version = "=0.11.0", features = ["tls"] }
-ginepro = "=0.7.1"
-tokio = { version = "^1.36.0", features = ["rt", "rt-multi-thread", "parking_lot", "signal", "sync", "fs"] }
+ginepro = "=0.7.2"
+tokio = { version = "^1.38.0", features = ["rt", "rt-multi-thread", "parking_lot", "signal", "sync", "fs"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["json", "env-filter"] }
-prost = "^0.12.3"
-prost-types = "^0.12.3"
+prost = "^0.12.6"
+prost-types = "^0.12.6"
 serde_yaml = "^0.9.33"
-serde = { version = "^1.0.197", features = ["derive"] }
+serde = { version = "^1.0.203", features = ["derive"] }
 opentelemetry = { version = "0.22", features = ["trace"] }
 opentelemetry_sdk = {version = "0.22", features = ["rt-tokio"]}
 opentelemetry-otlp = "0.15.0"
