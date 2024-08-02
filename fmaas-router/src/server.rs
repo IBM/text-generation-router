@@ -11,8 +11,9 @@ use crate::{
     pb::{
         caikit::runtime::nlp::nlp_service_server::NlpServiceServer,
         fmaas::generation_service_server::GenerationServiceServer,
+        caikit::runtime::info::info_service_server::InfoServiceServer
     },
-    rpc::{generation::GenerationServicer, nlp::NlpServicer},
+    rpc::{generation::GenerationServicer, info::InfoServicer, nlp::NlpServicer},
     ModelMap,
 };
 
@@ -72,6 +73,10 @@ pub async fn run(
         let nlp_servicer =
             NlpServicer::new(default_target_port, client_tls.as_ref(), model_map).await;
         routes_builder.add_service(NlpServiceServer::new(nlp_servicer));
+        info!("Enabling InfoService");
+        let info_servicer =
+        InfoServicer::new(default_target_port, client_tls.as_ref(), model_map).await;
+        routes_builder.add_service(InfoServiceServer::new(info_servicer));
     }
     let grpc_server = builder
         .add_routes(routes_builder.routes())

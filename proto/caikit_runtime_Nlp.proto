@@ -201,6 +201,12 @@ message TokenClassificationTaskRequest {
   optional double threshold = 2;
 }
 
+message TokenizationTaskRequest {
+
+  /*-- fields --*/
+  string text = 1;
+}
+
 
 /*-- SERVICES ----------------------------------------------------------------*/
 
@@ -216,6 +222,7 @@ service NlpService {
   rpc TextClassificationTaskPredict(caikit.runtime.Nlp.TextClassificationTaskRequest) returns (caikit_data_model.nlp.ClassificationResults);
   rpc TextGenerationTaskPredict(caikit.runtime.Nlp.TextGenerationTaskRequest) returns (caikit_data_model.nlp.GeneratedTextResult);
   rpc TokenClassificationTaskPredict(caikit.runtime.Nlp.TokenClassificationTaskRequest) returns (caikit_data_model.nlp.TokenClassificationResults);
+  rpc TokenizationTaskPredict(caikit.runtime.Nlp.TokenizationTaskRequest) returns (caikit_data_model.nlp.TokenizationResults);
 }
 
 service NlpTrainingService {
