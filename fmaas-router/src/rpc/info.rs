@@ -47,30 +47,30 @@ impl InfoServicer {
 
 #[tonic::async_trait]
 impl InfoService for InfoServicer {
-#[instrument(skip_all)]
-async fn get_models_info(
-    &self,
-    request: Request<ModelInfoRequest>,
-) -> Result<Response<ModelInfoResponse>, Status> {
-    let model_id = extract_model_id(&request)?;
-    let mir: &ModelInfoRequest = request.get_ref();
-    if mir.model_ids.is_empty() {
-        return Ok(Response::new(ModelInfoResponse::default()));
+    #[instrument(skip_all)]
+    async fn get_models_info(
+        &self,
+        request: Request<ModelInfoRequest>,
+    ) -> Result<Response<ModelInfoResponse>, Status> {
+        let model_id = extract_model_id(&request)?;
+        let mir: &ModelInfoRequest = request.get_ref();
+        if mir.model_ids.is_empty() {
+            return Ok(Response::new(ModelInfoResponse::default()));
+        }
+        debug!(
+            "Routing get models info request for Model ID {}",
+            model_id
+        );
+        self.client(model_id)
+            .await?
+            .get_models_info(request)
+            .await
     }
-    debug!(
-        "Routing get models info request for Model ID {}",
-        model_id
-    );
-    self.client(model_id)
-        .await?
-        .get_models_info(request)
-        .await
-}
-#[instrument(skip_all)]
-async fn get_runtime_info(
-    &self,
-    _request: Request<RuntimeInfoRequest>,
-) -> Result<Response<RuntimeInfoResponse>, Status> {
-    Err(Status::unimplemented("not implemented"))
-}
+    #[instrument(skip_all)]
+    async fn get_runtime_info(
+        &self,
+        _request: Request<RuntimeInfoRequest>,
+    ) -> Result<Response<RuntimeInfoResponse>, Status> {
+        Err(Status::unimplemented("not implemented"))
+    }
 }
