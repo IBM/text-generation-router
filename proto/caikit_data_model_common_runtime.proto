@@ -6,7 +6,7 @@
 syntax = "proto3";
 package caikit_data_model.common.runtime;
 import "caikit_data_model_common.proto";
-
+import "google/protobuf/struct.proto";
 
 /*-- MESSAGES ----------------------------------------------------------------*/
 
@@ -18,7 +18,7 @@ message ModelInfo {
   string model_path = 1;
   string name = 2;
   int64 size = 3;
-  map<string, string> metadata = 4;
+  google.protobuf.Struct metadata = 4;
   bool loaded = 7;
   string module_id = 5;
   map<string, string> module_metadata = 6;

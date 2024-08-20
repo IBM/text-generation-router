@@ -1,17 +1,14 @@
 use std::collections::HashMap;
 
 use ginepro::LoadBalancedChannel;
-use tonic::{transport::ClientTlsConfig, Code, Request, Response, Status, Streaming};
+use tonic::{transport::ClientTlsConfig, Request, Response, Status, Streaming};
 use tracing::{debug, instrument};
 
-use crate::{pb::{
+use crate::rpc::extract_model_id;
+
+use crate::{create_clients, pb::{
     caikit::runtime::nlp::{
-        nlp_service_client::NlpServiceClient, nlp_service_server::NlpService,
-        BidiStreamingTokenClassificationTaskRequest, EmbeddingTaskRequest,
-        EmbeddingTasksRequest, RerankTaskRequest, RerankTasksRequest,
-        SentenceSimilarityTaskRequest, SentenceSimilarityTasksRequest,
-        ServerStreamingTextGenerationTaskRequest, TextClassificationTaskRequest,
-        TextGenerationTaskRequest, TokenClassificationTaskRequest,
+        nlp_service_client::NlpServiceClient, nlp_service_server::NlpService, BidiStreamingTokenClassificationTaskRequest, EmbeddingTaskRequest, EmbeddingTasksRequest, RerankTaskRequest, RerankTasksRequest, SentenceSimilarityTaskRequest, SentenceSimilarityTasksRequest, ServerStreamingTextGenerationTaskRequest, TextClassificationTaskRequest, TextGenerationTaskRequest, TokenClassificationTaskRequest, TokenizationTaskRequest
     },
     caikit_data_model::{
         caikit_nlp::{
@@ -21,11 +18,10 @@ use crate::{pb::{
         nlp::{
             ClassificationResults, GeneratedTextResult, GeneratedTextStreamResult,
             TokenClassificationResults, TokenClassificationStreamResult,
+            TokenizationResults
         },
     },
-}, create_clients, ServiceAddr};
-
-const METADATA_NAME_MODEL_ID: &str = "mm-model-id";
+}, ServiceAddr};
 
 #[derive(Debug, Default)]
 pub struct NlpServicer {
@@ -220,21 +216,25 @@ impl NlpService for NlpServicer {
     ) -> Result<Response<TokenClassificationResults>, Status> {
         Err(Status::unimplemented("not implemented"))
     }
-}
 
-/// Extracts model_id from [`Request`] metadata.
-fn extract_model_id<T>(request: &Request<T>) -> Result<&str, Status> {
-    let metadata = request.metadata();
-    if !metadata.contains_key(METADATA_NAME_MODEL_ID) {
-        return Err(Status::new(
-            Code::InvalidArgument,
-            "Missing required model ID",
-        ));
+    #[instrument(skip_all)]
+    async fn tokenization_task_predict(
+        &self,
+        request: Request<TokenizationTaskRequest>,
+    ) -> Result<Response<TokenizationResults>, Status> {
+        let model_id = extract_model_id(&request)?;
+        let ttr: &TokenizationTaskRequest = request.get_ref();
+        if ttr.text.is_empty() {
+            return Ok(Response::new(TokenizationResults::default()));
+        }
+        debug!(
+            "Routing tokenization task predict request for Model ID {}",
+            model_id
+        );
+        self.client(model_id)
+            .await?
+            .tokenization_task_predict(request)
+            .await
     }
-    let model_id = metadata
-        .get(METADATA_NAME_MODEL_ID)
-        .unwrap()
-        .to_str()
-        .unwrap();
-    Ok(model_id)
+
 }
