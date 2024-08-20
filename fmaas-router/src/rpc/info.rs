@@ -4,8 +4,6 @@ use ginepro::LoadBalancedChannel;
 use tonic::{transport::ClientTlsConfig, Request, Response, Status};
 use tracing::{debug, instrument};
 
-use crate::rpc::extract_model_id;
-
 use crate::{create_clients, pb::{
     caikit::runtime::info::{
         info_service_client::InfoServiceClient, info_service_server::InfoService
@@ -52,19 +50,32 @@ impl InfoService for InfoServicer {
         &self,
         request: Request<ModelInfoRequest>,
     ) -> Result<Response<ModelInfoResponse>, Status> {
-        let model_id = extract_model_id(&request)?;
         let mir: &ModelInfoRequest = request.get_ref();
+
         if mir.model_ids.is_empty() {
             return Ok(Response::new(ModelInfoResponse::default()));
         }
-        debug!(
-            "Routing get models info request for Model ID {}",
-            model_id
-        );
-        self.client(model_id)
-            .await?
-            .get_models_info(request)
-            .await
+
+        let mut results = vec![];
+        for model in &mir.model_ids {
+
+            debug!(
+                "Routing get models info request for Model ID {}",
+                model
+            );
+            let request = tonic::Request::new(ModelInfoRequest {model_ids: vec![model.to_string()]});
+            let mut client = self.client(model.as_str()).await?;
+
+            results.push(client.get_models_info(request).await?);
+        }
+
+       let mut models_responses = vec![];
+       for res in results {
+         models_responses.extend(res.into_inner().models);
+       }
+
+       let response = tonic::Response::new(ModelInfoResponse {models: models_responses});
+       Ok(response)
     }
     #[instrument(skip_all)]
     async fn get_runtime_info(
