@@ -11,23 +11,20 @@ ARG PROTOC_VERSION
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 # Install protoc, no longer included in prost crate
-RUN if [[ $(uname -m) = "s390" ]]; then \
-    cd /tmp && \
-    curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-s390_64.zip && \
+# Set the protoc version
+RUN cd /tmp && \
+    if [ "$(uname -m)" = "s390x" ]; then \
+        apt update && \
+        apt install -y cmake clang libclang-dev curl unzip && \
+        curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-s390_64.zip; \
+    elif [ "$(uname -m)" = "x86_64" ]; then \
+        curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip; \
+    fi && \
     unzip protoc-*.zip -d /usr/local && \
-    rm protoc-*.zip; \
-    elif [[ $(uname -m) = "x86" ]]; then \
-    cd /tmp && \
-    curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
-    unzip protoc-*.zip -d /usr/local && \
-    rm protoc-*.zip; \
-    fi
-RUN if [[ $(uname -m) = "s390" ]]; then \
-    apt update && apt install -y cmake clang libclang-dev; \
-    fi 
-ENV LIBCLANG_PATH=/usr/lib/llvm-14/lib/
+    rm protoc-*.zip
 
-RUN apt-get update && apt-get install -y protobuf-compiler
+
+ENV LIBCLANG_PATH=/usr/lib/llvm-14/lib/
 
 WORKDIR /usr/src
 
