@@ -11,7 +11,6 @@ ARG PROTOC_VERSION
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 # Install protoc, no longer included in prost crate
-# Set the protoc version
 RUN cd /tmp && \
     if [ "$(uname -m)" = "s390x" ]; then \
         apt update && \
@@ -22,7 +21,6 @@ RUN cd /tmp && \
     fi && \
     unzip protoc-*.zip -d /usr/local && \
     rm protoc-*.zip
-
 
 ENV LIBCLANG_PATH=/usr/lib/llvm-14/lib/
 
