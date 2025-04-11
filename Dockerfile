@@ -5,15 +5,24 @@ ARG PROTOC_VERSION=27.1
 
 ## Rust builder ################################################################
 # Specific debian version so that compatible glibc version is used
-FROM rust:1.79-bullseye as rust-builder
+FROM rust:1.81 as rust-builder
 ARG PROTOC_VERSION
 
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 
 # Install protoc, no longer included in prost crate
 RUN cd /tmp && \
-    curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
-    unzip protoc-*.zip -d /usr/local && rm protoc-*.zip
+    if [ "$(uname -m)" = "s390x" ]; then \
+        apt update && \
+        apt install -y cmake clang libclang-dev curl unzip && \
+        curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-s390_64.zip; \
+    elif [ "$(uname -m)" = "x86_64" ]; then \
+        curl -L -O https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip; \
+    fi && \
+    unzip protoc-*.zip -d /usr/local && \
+    rm protoc-*.zip
+
+ENV LIBCLANG_PATH=/usr/lib/llvm-14/lib/
 
 WORKDIR /usr/src
 
