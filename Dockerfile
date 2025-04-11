@@ -5,7 +5,7 @@ ARG PROTOC_VERSION=27.1
 
 ## Rust builder ################################################################
 # Specific debian version so that compatible glibc version is used
-FROM rust:1.84 as rust-builder
+FROM rust:1.81 as rust-builder
 ARG PROTOC_VERSION
 
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
