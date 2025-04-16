@@ -21,7 +21,6 @@ RUN cd /tmp && \
     fi && \
     unzip protoc-*.zip -d /usr/local && \
     rm protoc-*.zip
-
 ENV LIBCLANG_PATH=/usr/lib/llvm-14/lib/
 
 WORKDIR /usr/src
