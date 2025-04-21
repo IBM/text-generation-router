@@ -97,4 +97,4 @@ jobs:
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
-        platforms: linux/amd64
+        platforms: linux/amd64,linux/s390x
