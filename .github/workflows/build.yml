@@ -35,6 +35,9 @@ jobs:
     - name: "Checkout"
       uses: actions/checkout@v4
 
+    - name: "Set up QEMU"
+      uses: docker/setup-qemu-action@v3
+
     - name: "Set up Docker Buildx"
       uses: docker/setup-buildx-action@v3
 
@@ -94,6 +97,7 @@ jobs:
         context: .
         target: router-release
         tags: ${{ steps.meta.outputs.tags }}
+        provenance: false
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
