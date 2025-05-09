@@ -96,8 +96,8 @@ jobs:
       with:
         context: .
         target: router-release
-        tags: ${{ steps.meta.outputs.tags }}
         provenance: false
+        tags: ${{ steps.meta.outputs.tags }}
         cache-from: type=registry,ref=${{ env.CACHE_IMAGE }}
         cache-to: ${{ env.CACHE_TO }}
         push: ${{ github.event_name != 'pull_request' }}
